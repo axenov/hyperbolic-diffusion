@@ -427,7 +427,7 @@ export class HyperbolicDrawler {
             for (let i = 1; i <= (k - 1) / 2; i++) {
                 this.createHyperbolicLine(a1, a1 + i * g);
             }
-            this.createHyperbolicLine(a1, a1 + HyperbolicMath.degrees2Radians(179));
+            this.createHyperbolicLine(a1, a1 + HyperbolicMath.degrees2Radians(180));
             for (let i = 1; i <= (k - 1) / 2; i++) {
                 this.createHyperbolicLine(a1, a1 - i * g);
             }
@@ -499,12 +499,11 @@ export class HyperbolicDrawler {
             throw new Error("Outer radius should be greater than inner radius");
         }
         if (n === 1) {
-            this.handleCircleDrawing(0, (r1 + r2) / 8);
+            this.handleCircleDrawing(0, r2);
             return
         }
         const p = (r2 - r1) / (n - 1);
         
-        this.ctx.lineWidth = 2;    
         for (let i = 0; i < n; i++) {
             let rg = r1 + i * p;
             let r = 0;
@@ -516,6 +515,142 @@ export class HyperbolicDrawler {
         }
     }
 
+
+    /**
+     * Creates a series of Equidistant Curves  on the canvas.
+     * @param ctx The 2D rendering context of the canvas
+     * @param n Number of arcs to draw
+     * @param a Initial angle in radians
+     */
+    createEquidistantsLegacy(n: number, a: number): void {
+        let b = 0, X1 = 0, X2 = 0, Y1 = 0, Y2 = 0;
+        let X3 = this.X + this.R * Math.cos(a);
+        let Y3 = this.Y - this.R * Math.sin(a);
+        let X4 = this.X - this.R * Math.cos(a);
+        let Y4 = this.Y +this.R * Math.sin(a);
+
+        if (n % 2 === 1) n += 2;
+        const o = Math.PI / (Math.ceil(n / 2) + 1);
+
+        for (let i = 1; i <= Math.ceil(n / 2); i++) {
+            b = i * o;
+            Y1 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            Y2 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+            X1 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            X2 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+
+            this.drawArc(X1, Y1, X2, Y2, X3, Y3, X4, Y4);
+        }
+
+        a += Math.PI;
+        X3 = this.X + this.R * Math.cos(a);
+        Y3 = this.Y - this.R * Math.sin(a);
+        X4 = this.X - this.R * Math.cos(a);
+        Y4 = this.Y + this.R * Math.sin(a);
+
+        if (n % 2 === 1) {
+            for (let i = 1; i < Math.floor(n / 2); i++) {
+                b = i * o;
+                Y1 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+                Y2 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+                X1 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+                X2 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+
+                this.drawArc(X1, Y1, X2, Y2, X3, Y3, X4, Y4);
+            }
+        } else {
+            for (let i = 1; i <= Math.floor(n / 2); i++) {
+                b = i * o;
+                Y1 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+                Y2 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+                X1 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+                X2 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+
+                this.drawArc(X1, Y1, X2, Y2, X3, Y3, X4, Y4);
+            }    }
+    }
+
+
+    /**
+     * Creates a series of Equidistant Curves  on the canvas.
+     * @param ctx The 2D rendering context of the canvas
+     * @param n Number of arcs to draw
+     * @param a Initial angle in radians
+     */
+    createEquidistants(n: number, a: number): void {
+        let b = 0, X1 = 0, X2 = 0, Y1 = 0, Y2 = 0;
+        if (!this.ctx) {
+            throw new Error("Canvas context not initialized");
+        }
+
+        if (n % 2 === 1) {
+            n -= 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.X + this.R * Math.cos(a), this.Y - this.R * Math.sin(a));
+            this.ctx.lineTo(this.X - this.R * Math.cos(a), this.Y + this.R * Math.sin(a));
+            this.ctx.stroke();
+        }
+
+        // Draw the first half of the equidistant curves
+        const o = Math.PI / (Math.ceil(n / 2) + 1);
+        let X3 = this.X + this.R * Math.cos(a);
+        let Y3 = this.Y - this.R * Math.sin(a);
+        let X4 = this.X - this.R * Math.cos(a);
+        let Y4 = this.Y +this.R * Math.sin(a);
+        for (let i = 1; i <= Math.ceil(n / 2); i++) {
+            b = i * o;
+            Y1 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            Y2 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+            X1 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            X2 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+
+            this.drawArc(X1, Y1, X2, Y2, X3, Y3, X4, Y4);
+        }
+
+        // Draw the second half of the equidistant curves
+        a += Math.PI;
+        X3 = this.X + this.R * Math.cos(a);
+        Y3 = this.Y - this.R * Math.sin(a);
+        X4 = this.X - this.R * Math.cos(a);
+        Y4 = this.Y + this.R * Math.sin(a);
+        for (let i = 1; i <= Math.floor(n / 2); i++) {
+            b = i * o;
+            Y1 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            Y2 = this.Y + this.R * (Math.cos(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+            X1 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) - 1 / Math.sin(b / 2));
+            X2 = this.X + this.R * (Math.sin(a) / Math.tan(b / 2) + 1 / Math.sin(b / 2));
+
+            this.drawArc(X1, Y1, X2, Y2, X3, Y3, X4, Y4);
+        } 
+    }
+
+    /**
+     * Draws an arc on the canvas.
+     * This function replaces the VCL Canvas->Arc method.
+     */
+    drawArc(
+        x1: number, y1: number, 
+        x2: number, y2: number, 
+        x3: number, y3: number, 
+        x4: number, y4: number
+    ): void {
+        if (!this.ctx) {
+            throw new Error("Canvas context not initialized");
+        }
+
+        const centerX = (x1 + x2) / 2;
+        const centerY = (y1 + y2) / 2;
+        const radiusX = Math.abs(x2 - x1) / 2;
+        const radiusY = Math.abs(y2 - y1) / 2;
+    
+        // Calculate start and end angles
+        const startAngle = Math.atan2(y3 - centerY, x3 - centerX);
+        let endAngle = Math.atan2(y4 - centerY, x4 - centerX);
+
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, endAngle, startAngle);
+        this.ctx.stroke();
+    }
 
 
     /**
