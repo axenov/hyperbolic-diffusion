@@ -4,20 +4,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import * as HyperbolicMath from '@/components/hyperbolicMath';
+import { HyperbolicDrawler } from '@/components/hyperbolicDrawing';
+
+const max_slider_value = 50;
 
 interface VerticalSliderProps {
   value: number;
   onChange: (value: number) => void;
   title: string;
 }
-
 const VerticalSlider: React.FC<VerticalSliderProps> = ({ value, onChange, title }) => {
   return (
     <div className="flex flex-col items-center h-64">
       <input
         type="range"
         min="0"
-        max="100"
+        max={max_slider_value}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="h-full appearance-none bg-gray-200 rounded-full outline-none opacity-70 transition-opacity duration-200 ease-in-out hover:opacity-100"
@@ -53,86 +55,86 @@ const VerticalSlider: React.FC<VerticalSliderProps> = ({ value, onChange, title 
 };
 
 const HyperbolicDiffusionApp: React.FC = () => {
-  const defaultsliderValues = [50, 50, 50, 0, 0, 0, 0];
+  const defaultsliderValues = [max_slider_value/2, max_slider_value/8, 0, 0, 0, 0, 0];
   const [sliderValues, setSliderValues] = useState<number[]>(defaultsliderValues);
+  const [sliderTitles, setSliderTitles] = useState<string[]>(['Angle', 'Frequency', 'Circles', 'Parallels', 'Horocycles', 'Perpendiculars', 'Equidistants']);
+  const titleIndexMap: { [key: string]: number } = sliderTitles.map((_, i) => ({ [sliderTitles[i]]: i })).reduce((acc, obj) => ({ ...acc, ...obj }), {});
+  
   const [textboxContent, setTextboxContent] = useState<string>('');
-  const [sliderTitles, setSliderTitles] = useState<string[]>(['Angle', 'Density', 'Frequency', 'Parallels', 'Perpendiculars', 'Equidistants', 'Horocycles']);
+  
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
-  // imageRef.current.src = canvasRef.current.toDataURL();
-  const X = 200, Y = X, R = X * 0.95;
-
-  // TO DO: finish the cleaning
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // // ctx.fillStyle = 'white';
-        // // ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-  }
-
-  const setEmptyPoincareDisk = () =>{
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = 'white';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          // Draw the Poincare disk model
-          ctx.beginPath();
-          ctx.arc(X, Y, R, 0, 2 * Math.PI);
-          ctx.strokeStyle = 'blue';
-          ctx.stroke();
-        }
-      }
-  }
-
-  const handleClear = () => {
-    const canvas = canvasRef.current;
-    const image = imageRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (image) {
-          image.src = canvas.toDataURL();
-        }
-        setEmptyPoincareDisk();
-      }
-    }
-    setSliderValues(defaultsliderValues);
-  };
+  const imageRef = useRef<HTMLImageElement | null>(null);  
 
   useEffect(() => {
-    clearCanvas();
-    handleClear();
+    let hyperbolicDrawler = new HyperbolicDrawler(canvasRef);
+
+    hyperbolicDrawler.clearCanvas()
+    hyperbolicDrawler.setEmptyPoincareDisk();
   }, []);
+
+
+  const handleClear = () => {
+    let hyperbolicDrawler = new HyperbolicDrawler(canvasRef);
+    hyperbolicDrawler.clearCanvas()
+    hyperbolicDrawler.setEmptyPoincareDisk();
+
+    let image = imageRef.current;
+    if (image) {
+      image.src = '/white.png';
+    }
+
+    setSliderValues(defaultsliderValues);
+  };
 
   const handleSliderChange = (index: number, value: number) => {
     const newValues = [...sliderValues];
     newValues[index] = value;
     setSliderValues(newValues);
-    
-    // on each change of the sliders, we will redraw the canvas and draw the new circle
-    // TO DO: Implement the logic to draw the hyperbolic mosaics
-    setEmptyPoincareDisk();
+
+    let hyperbolicDrawler = new HyperbolicDrawler(canvasRef);
+    hyperbolicDrawler.setEmptyPoincareDisk();
+
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.beginPath();
-        ctx.arc(X, Y, value*R*0.01, 0, 2 * Math.PI);
-        ctx.strokeStyle = 'green';
-        ctx.stroke();
+        ctx.strokeStyle = 'green'
+        ctx.lineWidth = 1;
+
+        let angle = 0
+
+        // Draw hyperbolic circles
+        if (newValues[titleIndexMap["Circles"]] > 0) {
+          hyperbolicDrawler.handleCircleSeriesDrawing(newValues[titleIndexMap["Circles"]], 0.05, 10.0)
+        }
+        // Draw hyperbolic parallel lines
+        if (newValues[titleIndexMap["Parallels"]] > 0) {
+          let frequency = Math.round(newValues[titleIndexMap["Frequency"]]/50*16);
+          for (let i = 0; i < frequency; i++) {
+            angle= newValues[titleIndexMap["Angle"]] * 360/max_slider_value+90 + i * 360 / frequency;
+            hyperbolicDrawler.createParallels(newValues[titleIndexMap["Parallels"]], HyperbolicMath.degrees2Radians(angle));
+          }
+        }
+        // Draw hyperbolic perpendicular lines
+        if (newValues[titleIndexMap["Perpendiculars"]] > 0) {
+          let frequency = Math.round(newValues[titleIndexMap["Frequency"]]/50*16);
+          for (let i = 0; i < frequency; i++) {
+            angle= newValues[titleIndexMap["Angle"]] * 360/max_slider_value+90 + i * 360 / frequency;
+            hyperbolicDrawler.createPerpendiculars(newValues[titleIndexMap["Perpendiculars"]], HyperbolicMath.degrees2Radians(angle));
+          }
+        }
+        // Draw hyperbolic holocycles
+        if (newValues[titleIndexMap["Horocycles"]] > 0) {
+          let frequency = Math.round(newValues[titleIndexMap["Frequency"]]/50*16);
+          for (let i = 0; i < frequency; i++) {
+            angle= newValues[titleIndexMap["Angle"]] * 360/max_slider_value+90 + i * 360 / frequency;
+            hyperbolicDrawler.createOricycle(newValues[titleIndexMap["Horocycles"]], HyperbolicMath.degrees2Radians(angle))
+          }
+        }
       }
     }
-    console.log(HyperbolicMath.radians2Degrees(1));
   };
+
 
   const handleGenerate = () => {
     // Here you would implement the logic to generate the image based on the canvas
@@ -149,7 +151,7 @@ const HyperbolicDiffusionApp: React.FC = () => {
   return (
     <div className="flex flex-col items-center p-4 bg-gray-100 min-h-screen">
       <div className="flex w-full max-w-4xl justify-between mb-4">
-        <canvas ref={canvasRef} width={X*2} height={Y*2} className="border border-gray-300 bg-white shadow-md" />
+        <canvas ref={canvasRef} width={400} height={400} className="border border-gray-300 bg-white shadow-md" />
         <div className="w-[400px] h-[400px] border border-gray-300 bg-white shadow-md overflow-hidden">
           <img ref={imageRef} alt="Generated Image" className="w-full h-full object-contain" />
         </div>

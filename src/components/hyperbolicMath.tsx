@@ -345,6 +345,7 @@ export function completeTriangle(A: number, a: number, B: number, b: number, C: 
         return { A, a, B, b, C, c };
     } catch (error) {
         console.error("An error occurred");
+        throw error;
     }
 }
 
@@ -389,7 +390,6 @@ export function calculatePoincareAndGyrovectorRadius(r: number, rg: number) {
     try {
         if (r !== 0 && rg === 0) {
             rg = Math.log((1 + r) / (1 - r));
-            console.log(rg);
         } else if (rg !== 0 && r === 0) {
             r = Math.tanh(rg / 2);
         }
