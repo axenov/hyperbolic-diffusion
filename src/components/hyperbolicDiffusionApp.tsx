@@ -179,7 +179,11 @@ const HyperbolicDiffusionApp: React.FC = () => {
       }
 
       // Convert canvas to blob
-      const blob = await new Promise<Blob>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+
+      if (!blob) {
+        throw new Error('Failed to convert canvas to blob');
+      }
 
       // Create FormData and append the blob
       const formData = new FormData();
@@ -238,7 +242,7 @@ const HyperbolicDiffusionApp: React.FC = () => {
 
 
   return (
-    <div className="flex flex-col items-center p-4 bg-gray-100 min-h-screen">
+    <div className="flex flex-col items-center p-4 bg-gray-100">
       <div className="flex w-full max-w-4xl justify-between mb-4">
         <canvas ref={canvasRef} width={1024} height={1024} className="border border-gray-300 bg-white shadow-md" style={{width: `400px`, height: `400px`}} /> 
 
@@ -282,7 +286,7 @@ const HyperbolicDiffusionApp: React.FC = () => {
         </div>
       </div>
       <div className="flex justify-center w-full max-w-4xl mb-4">
-      <Button 
+        <Button 
           onClick={handleGenerate} 
           className="px-4 py-2 mr-10 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           disabled={isLoading}

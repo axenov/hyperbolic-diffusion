@@ -80,6 +80,9 @@ function preparePrompt(workflow: any, inputImage: string, promptText: string): a
     prompt[kSampler].inputs.seed = Math.floor(Math.random() * (10**15 - 10**14) + 10**14);
     const positiveInputId = prompt[kSampler].inputs.positive[0];
     prompt[positiveInputId].inputs.text = promptText;
+
+    const negativeInputId = prompt[kSampler].inputs.negative[0];
+    prompt[negativeInputId].inputs.text = "low contrast, plain, simple, monochrome"
   }
 
   const imageLoader = Object.keys(idToClassType).find(key => idToClassType[key] === 'LoadImage');
