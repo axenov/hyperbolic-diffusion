@@ -8,7 +8,7 @@ Draw complex patterns on the Poincare disk model of the hyperbolic plane and tra
 
 Download and install [ComfyUI](https://github.com/comfyanonymous/ComfyUI). You can do it in one click using [Pinokio](https://github.com/pinokiocomputer/pinokio).
 
-Download [DreamShaper XL - v2.1 Turbo DPM++ SDE](https://civitai.com/models/112902/dreamshaper-xl?modelVersionId=351306) and put it in the folder `checkpoints` of ComfyUI
+Download [DreamShaper XL - v2.1 Turbo DPM++ SDE](https://civitai.com/models/112902/dreamshaper-xl?modelVersionId=351306) and put it in the folder `models/checkpoints` of ComfyUI
 
 Clone this repository and either:
 
