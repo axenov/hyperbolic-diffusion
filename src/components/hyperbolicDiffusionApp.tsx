@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import * as HyperbolicMath from '@/components/hyperbolicMath';
 import { HyperbolicDrawler } from '@/components/hyperbolicDrawing';
+import { Loader2 } from 'lucide-react';
 
 const max_slider_value = 50;
 
@@ -77,6 +78,10 @@ const HyperbolicDiffusionApp: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);  
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+
+
   useEffect(() => {
     let hyperbolicDrawler = new HyperbolicDrawler(canvasRef);
 
@@ -97,6 +102,9 @@ const HyperbolicDiffusionApp: React.FC = () => {
     let image = imageRef.current;
     if (image) {
       image.src = '/white.png';
+    }
+    if (generatedImageUrl) {
+      setGeneratedImageUrl(null);
     }
 
     setSliderValues(defaultsliderValues);
@@ -161,21 +169,56 @@ const HyperbolicDiffusionApp: React.FC = () => {
   };
 
 
-  const handleGenerate = () => {
-    // Here you would implement the logic to generate the image based on the canvas
-    // For now, we'll just set the image to a placeholder
-    const image = imageRef.current;
-    if (image) {
-      image.src = '/escher.webp';
+  const handleGenerate = async () => {
+    setIsLoading(true);
+    
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        throw new Error('Canvas not found');
+      }
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => canvas.toBlob(resolve, 'image/png'));
+
+      // Create FormData and append the blob
+      const formData = new FormData();
+      formData.append('image', blob, 'canvas_image.png');
+      formData.append('prompt', textboxContent);
+
+      // Send the image to the server
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+
+      const data = await response.json();
+      setGeneratedImageUrl(data.imageUrl);
+    } catch (error) {
+      console.error('Error generating image:', error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setIsLoading(false);
     }
   };
 
 
   const saveCanvas = () => {
     const canvas = canvasRef.current;
-    if (canvas) {
+
+    // if image was generated save image, otherwise save canvas
+    if (generatedImageUrl) {
       const link = document.createElement('a');
-      link.download = 'image.png';
+      link.download = 'generated_image.png';
+      link.href = generatedImageUrl;
+      link.click();
+    } else if (canvas) {
+      const link = document.createElement('a');
+      link.download = 'generated_image.png';
       link.href = canvas.toDataURL();
       link.click();
     }
@@ -200,8 +243,16 @@ const HyperbolicDiffusionApp: React.FC = () => {
         <canvas ref={canvasRef} width={1024} height={1024} className="border border-gray-300 bg-white shadow-md" style={{width: `400px`, height: `400px`}} /> 
 
         <div className="w-[400px] h-[400px] border border-gray-300 bg-white shadow-md overflow-hidden">
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 bg-opacity-75">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+          </div>
+        ) : generatedImageUrl ? (
+          <img src={generatedImageUrl} alt="Generated Image" className="w-full h-full object-contain" />
+        ) : (
           <img ref={imageRef} alt="Generated Image" className="w-full h-full object-contain" />
-        </div>
+        )}
+      </div>
       </div>
       <div className="w-full max-w-4xl flex justify-between mb-4">
         {sliderValues.map((value, index) => (
@@ -231,8 +282,12 @@ const HyperbolicDiffusionApp: React.FC = () => {
         </div>
       </div>
       <div className="flex justify-center w-full max-w-4xl mb-4">
-        <Button onClick={handleGenerate} className="px-4 py-2 mr-10 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-          Generate
+      <Button 
+          onClick={handleGenerate} 
+          className="px-4 py-2 mr-10 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Generating...' : 'Generate'}
         </Button>
         <Button onClick={handleClear} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
           Clear
