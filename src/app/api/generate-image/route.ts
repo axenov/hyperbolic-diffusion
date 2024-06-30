@@ -6,10 +6,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 
-const SERVER_ADDRESS = 'localhost:8188';
+// allow localhost both on the host and in the container
+const SERVER_ADDRESS = process.env.SERVER_ADDRESS || 'localhost:8188';
 
 export async function POST(request: NextRequest) {
-  console.log('Processing image...');
   try {
     const formData = await request.formData();
     const image = formData.get('image') as File;

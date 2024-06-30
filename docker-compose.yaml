@@ -9,5 +9,6 @@ services:
       - ./src:/app/src
     environment:
       - NODE_ENV=development
+      - SERVER_ADDRESS=host.docker.internal:8188
 volumes:
   src:
